@@ -26,7 +26,7 @@ We obtained the following results:
 | READ 2016 (double page) | 3.70    |  14.15  |   4.98   | 93.09       |
 
 
-Pretrained model weights are available [here](https://git.litislab.fr/dcoquenet/dan).
+Pretrained model weights are available [here](https://git.litislab.fr/dcoquenet/dan) and [here](https://zenodo.org/record/7244382).
 
 Table of contents:
 1. [Getting Started](#Getting-Started)
