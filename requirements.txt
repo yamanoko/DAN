@@ -39,7 +39,6 @@ numpy==1.22.2
 oauthlib==3.2.0
 opencv-python==4.5.5.62
 packaging==21.3
-Pillow==9.0.1
 progressbar==2.5
 protobuf==3.19.4
 pyasn1==0.4.8
