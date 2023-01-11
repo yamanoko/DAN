@@ -119,13 +119,12 @@ The outputs files are split into two subfolders: "checkpoints" and "results". \
 ## Citation
 
 ```bibtex
-@misc{Coquenet2022b,
+@article{Coquenet2023b,
   author = {Coquenet, Denis and Chatelain, Clément and Paquet, Thierry},
   title = {DAN: a Segmentation-free Document Attention Network for Handwritten Document Recognition},
-  doi = {10.48550/ARXIV.2203.12273},
-  url = {https://arxiv.org/abs/2203.12273},
-  publisher = {arXiv},
-  year = {2022},
+  doi={10.1109/TPAMI.2023.3235826}
+  journal={IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  year = {2023},
 }
 ```
 
