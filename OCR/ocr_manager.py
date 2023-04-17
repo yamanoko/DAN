@@ -42,7 +42,8 @@ import pickle
 class OCRManager(GenericTrainingManager):
     def __init__(self, params):
         super(OCRManager, self).__init__(params)
-        self.params["model_params"]["vocab_size"] = len(self.dataset.charset)
+        if self.dataset is not None:
+            self.params["model_params"]["vocab_size"] = len(self.dataset.charset)
 
     def generate_syn_line_dataset(self, name):
         """

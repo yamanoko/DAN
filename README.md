@@ -48,6 +48,8 @@ Install the dependencies:
 pip install -r requirements.txt
 ```
 
+## Quick prediction
+An example script file is available at OCR/document_OCR/dan/predict_examples to recognize images directly from paths using trained weights
 
 ## Datasets
 This section is dedicated to the datasets used in the paper: download and formatting instructions are provided 
@@ -116,6 +118,8 @@ Evaluation is performed just after training ending (training is stopped when the
 The outputs files are split into two subfolders: "checkpoints" and "results". \
 "checkpoints" contains model weights for the last trained epoch and for the epoch giving the best valid CER. \
 "results" contains tensorboard log for loss and metrics as well as text file for used hyperparameters and results of evaluation.
+
+
 ## Citation
 
 ```bibtex

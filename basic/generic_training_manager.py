@@ -62,7 +62,7 @@ class GenericTrainingManager:
         self.models = {}
         self.begin_time = None
         self.dataset = None
-        self.dataset_name = list(self.params["dataset_params"]["datasets"].values())[0]
+        self.dataset_name = list(self.params["dataset_params"]["datasets"].values())[0] if "datasets" in self.params["dataset_params"] else None
         self.paths = None
         self.latest_step = 0
         self.latest_epoch = -1
@@ -89,7 +89,8 @@ class GenericTrainingManager:
 
         self.init_hardware_config()
         self.init_paths()
-        self.load_dataset()
+        if self.dataset_name is not None:
+            self.load_dataset()
         self.params["model_params"]["use_amp"] = self.params["training_params"]["use_amp"]
 
     def init_paths(self):
@@ -143,7 +144,7 @@ class GenericTrainingManager:
         }
         self.is_master = self.ddp_config["master"] or not self.params["training_params"]["use_ddp"]
         if self.params["training_params"]["force_cpu"]:
-            self.device = "cpu"
+            self.device = torch.device("cpu")
         else:
             if self.params["training_params"]["use_ddp"]:
                 self.device = torch.device(self.ddp_config["rank"])
@@ -162,7 +163,7 @@ class GenericTrainingManager:
             print("##################")
         # local
         print("Local GPU:")
-        if self.device != "cpu":
+        if self.device.type != "cpu":
             print("Rank {}: {} {}".format(self.params["training_params"]["ddp_rank"], torch.cuda.get_device_name(), torch.cuda.get_device_properties(self.device)))
         else:
             print("WORKING ON CPU !\n")
@@ -207,7 +208,7 @@ class GenericTrainingManager:
         if self.params["training_params"]["load_epoch"] in ("best", "last"):
             for filename in os.listdir(self.paths["checkpoints"]):
                 if self.params["training_params"]["load_epoch"] in filename:
-                    return torch.load(os.path.join(self.paths["checkpoints"], filename))
+                    return torch.load(os.path.join(self.paths["checkpoints"], filename), map_location=self.device)
         return None
 
     def load_existing_model(self, checkpoint, strict=True):
@@ -242,7 +243,7 @@ class GenericTrainingManager:
             for model_name in self.params["model_params"]["transfer_learning"].keys():
                 state_dict_name, path, learnable, strict = self.params["model_params"]["transfer_learning"][model_name]
                 # Loading pretrained weights file
-                checkpoint = torch.load(path)
+                checkpoint = torch.load(path, map_location=self.device)
                 try:
                     # Load pretrained weights for model
                     self.models[model_name].load_state_dict(checkpoint["{}_state_dict".format(state_dict_name)], strict=strict)
@@ -418,7 +419,7 @@ class GenericTrainingManager:
         params["model_params"]["total_params"] = "{:,}".format(total_params)
 
         params["hardware"] = dict()
-        if self.device != "cpu":
+        if self.device.type != "cpu":
             for i in range(self.params["training_params"]["nb_gpu"]):
                 params["hardware"][str(i)] = "{} {}".format(torch.cuda.get_device_name(i), torch.cuda.get_device_properties(i))
         else:
@@ -718,7 +719,7 @@ class GenericTrainingManager:
         for filename in os.listdir(self.paths["checkpoints"]):
             if load_mode in filename:
                 checkpoint_path = os.path.join(self.paths["checkpoints"], filename)
-                checkpoint = torch.load(checkpoint_path)
+                checkpoint = torch.load(checkpoint_path, map_location=self.device)
                 for key in kwargs.keys():
                     checkpoint[key] = kwargs[key]
                 torch.save(checkpoint, checkpoint_path)
