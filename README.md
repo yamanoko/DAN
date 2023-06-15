@@ -128,6 +128,9 @@ The outputs files are split into two subfolders: "checkpoints" and "results". \
   title = {DAN: a Segmentation-free Document Attention Network for Handwritten Document Recognition},
   doi={10.1109/TPAMI.2023.3235826}
   journal={IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  volume={45},
+  number={7},
+  pages={8227-8243},
   year = {2023},
 }
 ```
