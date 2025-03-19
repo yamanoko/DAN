@@ -243,7 +243,7 @@ class GenericTrainingManager:
             for model_name in self.params["model_params"]["transfer_learning"].keys():
                 state_dict_name, path, learnable, strict = self.params["model_params"]["transfer_learning"][model_name]
                 # Loading pretrained weights file
-                checkpoint = torch.load(path, map_location=self.device)
+                checkpoint = torch.load(path, map_location=self.device, weights_only=False)
                 try:
                     # Load pretrained weights for model
                     self.models[model_name].load_state_dict(checkpoint["{}_state_dict".format(state_dict_name)], strict=strict)

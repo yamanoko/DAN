@@ -133,3 +133,6 @@ Datasets/raw/*
 **/outputs
 Fonts/*
 .idea
+
+dan-main/*
+*.zip

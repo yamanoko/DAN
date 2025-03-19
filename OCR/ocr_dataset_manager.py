@@ -1010,7 +1010,7 @@ def generate_typed_text_line_image_from_params(text, font, bg_color, txt_color, 
 
 def get_valid_fonts(alphabet=None):
     valid_fonts = list()
-    for fold_detail in os.walk("../../../Fonts"):
+    for fold_detail in os.walk("../Fonts"):
         if fold_detail[2]:
             for font_name in fold_detail[2]:
                 if ".ttf" not in font_name:

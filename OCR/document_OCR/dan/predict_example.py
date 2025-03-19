@@ -37,8 +37,8 @@ def get_params(weight_path):
             # "transfer_learning": None,
             "transfer_learning": {
                 # model_name: [state_dict_name, checkpoint_path, learnable, strict]
-                "encoder": ["encoder", weight_path, True, True],
-                "decoder": ["decoder", weight_path, True, False],
+                "encoder": ["encoder", "../../../dan-main/pretrained_models/dan_rimes_page.pt", True, True],
+                "decoder": ["decoder", "/home/yukinori/Desktop/RenAIssance2025/DAN/dan-main/pretrained_models/dan_rimes_page.pt", True, False],
             },
             "transfered_charset": True,  # Transfer learning of the decision layer based on charset of the line HTR model
             "additional_tokens": 1,  # for decision layer = [<eot>, ], only for transfered charset
@@ -81,7 +81,7 @@ def get_params(weight_path):
             "focus_metric": "cer",  # Metrics to focus on to determine best epoch
             "expected_metric_value": "low",  # ["high", "low"] What is best for the focus metric value
             "eval_metrics": ["cer", "wer", "map_cer"],  # Metrics name for evaluation on validation set during training
-            "force_cpu": True,  # True for debug purposes
+            "force_cpu": False,  # True for debug purposes
             "max_char_prediction": 3000,  # max number of token prediction
             # Keep teacher forcing rate to 20% during whole training
             "teacher_forcing_scheduler": {
@@ -104,7 +104,7 @@ def get_params(weight_path):
 
 def predict(model_path, img_paths):
     params = get_params(model_path)
-    checkpoint = torch.load(model_path, map_location="cpu")
+    checkpoint = torch.load(model_path, map_location="cpu", weights_only=False)
     charset = checkpoint["charset"]
 
     manager = Manager(params)
@@ -141,7 +141,8 @@ def predict(model_path, img_paths):
 
 if __name__ == "__main__":
 
-    model_path = "outputs/dan_rimes_page/checkpoints/dan_rimes_page.pt"
-    img_paths = ["../../../test.png", "../../../test2.png"]  # CHANGE WITH YOUR IMAGES PATH
+    model_path = "../../../dan-main/pretrained_models/dan_rimes_page.pt"
+    # img_paths = ["../../../test.png", "../../../test2.png"]  # CHANGE WITH YOUR IMAGES PATH
+    img_paths = ["../../../Datasets/formatted/READ_2016_page/train/train_0.jpeg"]  # CHANGE WITH YOUR IMAGES PATH
     predict(model_path, img_paths)
 
