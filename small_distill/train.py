@@ -144,7 +144,7 @@ if __name__ == "__main__":
 			student_loss = student_output.loss
 
 			# calculate distillation loss
-			target_vocab_dim = min(teacher_pred.shape[1], student_output.shape[2])
+			target_vocab_dim = min(teacher_pred.shape[1], student_output.logits.shape[2])
 			teacher_prob = teacher_pred.permute(0, 2, 1)[:, :, :target_vocab_dim]
 			student_prob = student_output.logits[:, 1:, :target_vocab_dim]
 			
