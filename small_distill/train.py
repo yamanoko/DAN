@@ -162,8 +162,9 @@ if __name__ == "__main__":
 			optimizer.step()
 
 		# validation
+		print("Validating model...")
 		model.eval()
-		for batch in valid_loader:
+		for batch in tqdm(valid_loader):
 			with torch.no_grad():
 				# calculate teacher predictions
 				teacher_x = batch["imgs"].to("cuda")
