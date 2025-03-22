@@ -105,7 +105,7 @@ if __name__ == "__main__":
 	# hyperparameters
 	print("Training model...")
 	num_epochs = 50000
-	distill_alpha = 0.5
+	distill_alpha = 0.1
 
 	best_cer = 1.0
 
@@ -152,8 +152,8 @@ if __name__ == "__main__":
 			teacher_prob = teacher_prob[:, :target_seq_length, :]
 			student_prob = student_prob[:, :target_seq_length, :]
 
-			teacher_prob = F.softmax(teacher_prob, dim=-1)
-			student_prob = F.log_softmax(student_prob, dim=-1)
+			teacher_prob = F.softmax(teacher_prob, dim=2)
+			student_prob = F.log_softmax(student_prob, dim=2)
 			distill_loss = kl_loss(student_prob, teacher_prob)
 
 			# calculate total loss
@@ -201,8 +201,8 @@ if __name__ == "__main__":
 				teacher_prob = teacher_prob[:, :target_seq_length, :]
 				student_prob = student_prob[:, :target_seq_length, :]
 
-				teacher_prob = F.softmax(teacher_prob, dim=-1)
-				student_prob = F.log_softmax(student_prob, dim=-1)
+				teacher_prob = F.softmax(teacher_prob, dim=2)
+				student_prob = F.log_softmax(student_prob, dim=2)
 				distill_loss = kl_loss(student_prob, teacher_prob)
 
 				# calculate metrics
