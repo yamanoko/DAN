@@ -161,91 +161,95 @@ if __name__ == "__main__":
 			total_loss.backward()
 			optimizer.step()
 
-		# validation
-		print("Validating model...")
-		model.eval()
-		for batch in tqdm(valid_loader):
-			with torch.no_grad():
-				# calculate teacher predictions
-				teacher_x = batch["imgs"].to("cuda")
-				teacher_y = batch["labels"].to("cuda")
-				reduced_size = [s[:2] for s in batch["imgs_reduced_shape"]]
+		if epoch % 50 == 0:
+			# validation
+			print("Validating model...")
+			model.eval()
+			for batch in tqdm(valid_loader):
+				with torch.no_grad():
+					# calculate teacher predictions
+					teacher_x = batch["imgs"].to("cuda")
+					teacher_y = batch["labels"].to("cuda")
+					reduced_size = [s[:2] for s in batch["imgs_reduced_shape"]]
 
-				hidden_predict = None
-				cache = None
+					hidden_predict = None
+					cache = None
 
-				raw_features = dan_manager.models["encoder"](teacher_x)
-				features_size = raw_features.size()
-				b, c, h, w = features_size
+					raw_features = dan_manager.models["encoder"](teacher_x)
+					features_size = raw_features.size()
+					b, c, h, w = features_size
 
-				pos_features = dan_manager.models["decoder"].features_updater.get_pos_features(raw_features)
-				features = torch.flatten(pos_features, start_dim=2).permute(2, 0, 1)
-				enhanced_features = pos_features
-				enhanced_features = torch.flatten(enhanced_features, start_dim=2).permute(2, 0, 1)
-				_, teacher_pred, hidden_predict, cache, _ = dan_manager.models["decoder"](features, enhanced_features, teacher_y[:, :-1],
-																				  reduced_size, [max(batch["labels_len"])]*b, features_size, start=0, hidden_predict=hidden_predict, 
-																				  cache=cache, keep_all_weights=True)
+					pos_features = dan_manager.models["decoder"].features_updater.get_pos_features(raw_features)
+					features = torch.flatten(pos_features, start_dim=2).permute(2, 0, 1)
+					enhanced_features = pos_features
+					enhanced_features = torch.flatten(enhanced_features, start_dim=2).permute(2, 0, 1)
+					_, teacher_pred, hidden_predict, cache, _ = dan_manager.models["decoder"](features, enhanced_features, teacher_y[:, :-1],
+																					reduced_size, [max(batch["labels_len"])]*b, features_size, start=0, hidden_predict=hidden_predict, 
+																					cache=cache, keep_all_weights=True)
 
-				# calculate student predictions
-				student_input = [resize_with_padding(to_pil_image(batch["imgs"][i]), 640, 480) for i in range(batch["imgs"].shape[0])]
-				student_input = image_processor(student_input, return_tensors="pt").to("cuda")
-				student_output = model(**student_input, labels=batch["labels"].to("cuda"))
-				student_loss = student_output.loss
+					# calculate student predictions
+					student_input = [resize_with_padding(to_pil_image(batch["imgs"][i]), 640, 480) for i in range(batch["imgs"].shape[0])]
+					student_input = image_processor(student_input, return_tensors="pt").to("cuda")
+					student_output = model(**student_input, labels=batch["labels"].to("cuda"))
+					student_loss = student_output.loss
 
-				# calculate distillation loss
-				target_vocab_dim = min(teacher_pred.shape[1], student_output.logits.shape[2])
-				teacher_prob = teacher_pred.permute(0, 2, 1)[:, :, :target_vocab_dim]
-				student_prob = student_output.logits[:, 1:, :target_vocab_dim]
-				
-				target_seq_length = min(teacher_prob.shape[1], student_prob.shape[1])
-				teacher_prob = teacher_prob[:, :target_seq_length, :]
-				student_prob = student_prob[:, :target_seq_length, :]
+					# calculate distillation loss
+					target_vocab_dim = min(teacher_pred.shape[1], student_output.logits.shape[2])
+					teacher_prob = teacher_pred.permute(0, 2, 1)[:, :, :target_vocab_dim]
+					student_prob = student_output.logits[:, 1:, :target_vocab_dim]
+					
+					target_seq_length = min(teacher_prob.shape[1], student_prob.shape[1])
+					teacher_prob = teacher_prob[:, :target_seq_length, :]
+					student_prob = student_prob[:, :target_seq_length, :]
 
-				teacher_prob = F.softmax(teacher_prob, dim=2)
-				student_prob = F.log_softmax(student_prob, dim=2)
-				distill_loss = kl_loss(student_prob, teacher_prob)
+					teacher_prob = F.softmax(teacher_prob, dim=2)
+					student_prob = F.log_softmax(student_prob, dim=2)
+					distill_loss = kl_loss(student_prob, teacher_prob)
 
-				# calculate metrics
-				generated_student_output = model.generate(**student_input, return_dict_in_generate=True, output_scores=True)
-				str_x = [LM_ind_to_str(training_dataset.charset, t, oov_symbol="") for t in generated_student_output["sequences"]]
-				str_y = batch["raw_labels"]
-				stacked_scores = F.softmax(torch.stack(generated_student_output["scores"]).permute(1, 2, 0), dim=1)
-				confidence_score = [torch.max(stacked_scores[i, :, :], dim=0).values.to("cpu") for i in range(stacked_scores.shape[0])]
-				for i in range(len(confidence_score)):
-					if len(list(confidence_score[i])) != len(str_x[i]):
-						print("ERROR")
-						print("confidence", len(list(confidence_score[i])))
-						print("str_x", len(str_x[i]))
+					# calculate metrics
+					generated_student_output = model.generate(**student_input, return_dict_in_generate=True, output_scores=True)
+					str_x = [LM_ind_to_str(training_dataset.charset, t, oov_symbol="") for t in generated_student_output["sequences"]]
+					str_y = batch["raw_labels"]
+					stacked_scores = F.softmax(torch.stack(generated_student_output["scores"]).permute(1, 2, 0), dim=1)
+					confidence_score = [torch.max(stacked_scores[i, :, :], dim=0).values.to("cpu") for i in range(stacked_scores.shape[0])]
+					for i in range(len(confidence_score)):
+						if len(list(confidence_score[i])) != len(str_x[i]):
+							print("ERROR")
+							print("confidence", len(list(confidence_score[i])))
+							print("str_x", len(str_x[i]))
+							min_len = min(len(list(confidence_score[i])), len(str_x[i]))
+							confidence_score[i] = confidence_score[i][:min_len]
+							str_x[i] = str_x[i][:min_len]
 
-				values = {
-					"nb_samples": generated_student_output["sequences"].shape[0],
-					"str_x": str_x,
-					"str_y": str_y,
-					"confidence_score": confidence_score,
-				}
-				batch_metrics = validation_metric_manager.compute_metrics(values, ["cer", "wer", "map_cer", "loer"])
-				validation_metric_manager.update_metrics(batch_metrics)
-		display_values = validation_metric_manager.get_display_values()
+					values = {
+						"nb_samples": generated_student_output["sequences"].shape[0],
+						"str_x": str_x,
+						"str_y": str_y,
+						"confidence_score": confidence_score,
+					}
+					batch_metrics = validation_metric_manager.compute_metrics(values, ["cer", "wer", "map_cer", "loer"])
+					validation_metric_manager.update_metrics(batch_metrics)
+			display_values = validation_metric_manager.get_display_values()
 
-		# log metrics
-		metrics_log = f"Epoch {epoch}, CER: {display_values['cer'].item()}, WER: {display_values['wer'].item()}, MAP_CER: {display_values['map_cer'].item()}, LOER: {display_values['loer'].item()}"
-		loss_log = f"Student Loss: {student_loss.item()}, Distill Loss: {distill_loss.item()}"
-		print(metrics_log)
-		print(loss_log)
-		if os.path.exists("metrics.log"):
-			with open("metrics.log", "a") as f:
-				f.write(metrics_log + "\n")
-				f.write(loss_log + "\n")
-		else:
-			with open("metrics.log", "w") as f:
-				f.write(metrics_log + "\n")
-				f.write(loss_log + "\n")
-		
-		# save best model
-		if display_values["cer"] < best_cer:
-			best_cer = display_values["cer"]
-			model.save_pretrained("best_model")
-			print("Best model saved")
-		validation_metric_manager.init_metrics()
+			# log metrics
+			metrics_log = f"Epoch {epoch}, CER: {display_values['cer'].item()}, WER: {display_values['wer'].item()}, MAP_CER: {display_values['map_cer'].item()}, LOER: {display_values['loer'].item()}"
+			loss_log = f"Student Loss: {student_loss.item()}, Distill Loss: {distill_loss.item()}"
+			print(metrics_log)
+			print(loss_log)
+			if os.path.exists("metrics.log"):
+				with open("metrics.log", "a") as f:
+					f.write(metrics_log + "\n")
+					f.write(loss_log + "\n")
+			else:
+				with open("metrics.log", "w") as f:
+					f.write(metrics_log + "\n")
+					f.write(loss_log + "\n")
+			
+			# save best model
+			if display_values["cer"] < best_cer:
+				best_cer = display_values["cer"]
+				model.save_pretrained("best_model")
+				print("Best model saved")
+			validation_metric_manager.init_metrics()
 
 
