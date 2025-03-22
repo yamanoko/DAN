@@ -110,11 +110,11 @@ if __name__ == "__main__":
 	best_cer = 1.0
 
 	# training loop
-	for epoch in tqdm(range(num_epochs)):
+	for epoch in range(num_epochs):
 		# set model to training mode
 		model.train()
 		training_dataset.train_dataset.training_info["epoch"] = epoch
-		for batch in train_loader:
+		for batch in tqdm(train_loader):
 			optimizer.zero_grad()
 			training_dataset.train_dataset.training_info["step"] += 1
 			# calculate teacher predictions
@@ -134,7 +134,7 @@ if __name__ == "__main__":
 			enhanced_features = pos_features
 			enhanced_features = torch.flatten(enhanced_features, start_dim=2).permute(2, 0, 1)
 			_, teacher_pred, hidden_predict, cache, _ = dan_manager.models["decoder"](features, enhanced_features, teacher_y[:, :-1],
-																			  reduced_size, [600]*b, features_size, start=0, hidden_predict=hidden_predict, 
+																			  reduced_size, [max(batch["labels_len"])]*b, features_size, start=0, hidden_predict=hidden_predict, 
 																			  cache=cache, keep_all_weights=True)
 
 			# calculate student predictions
