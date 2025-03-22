@@ -182,17 +182,17 @@ if __name__ == "__main__":
 				enhanced_features = pos_features
 				enhanced_features = torch.flatten(enhanced_features, start_dim=2).permute(2, 0, 1)
 				_, teacher_pred, hidden_predict, cache, _ = dan_manager.models["decoder"](features, enhanced_features, teacher_y[:, :-1],
-																				  reduced_size, [600]*b, features_size, start=0, hidden_predict=hidden_predict, 
+																				  reduced_size, [max(batch["labels_len"])]*b, features_size, start=0, hidden_predict=hidden_predict, 
 																				  cache=cache, keep_all_weights=True)
 
 				# calculate student predictions
-				student_input = [resize_with_padding(image, 640, 480) for image in batch["imgs"]]
+				student_input = [resize_with_padding(to_pil_image(batch["imgs"][i]), 640, 480) for i in range(batch["imgs"].shape[0])]
 				student_input = image_processor(student_input, return_tensors="pt").to("cuda")
 				student_output = model(**student_input, labels=batch["labels"].to("cuda"))
 				student_loss = student_output.loss
 
 				# calculate distillation loss
-				target_vocab_dim = min(teacher_pred.shape[1], student_output.shape[2])
+				target_vocab_dim = min(teacher_pred.shape[1], student_output.logits.shape[2])
 				teacher_prob = teacher_pred.permute(0, 2, 1)[:, :, :target_vocab_dim]
 				student_prob = student_output.logits[:, 1:, :target_vocab_dim]
 				
