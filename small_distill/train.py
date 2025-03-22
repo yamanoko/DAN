@@ -209,7 +209,7 @@ if __name__ == "__main__":
 				generated_student_output = model.generate(**student_input, return_dict_in_generate=True, output_scores=True)
 				str_x = [LM_ind_to_str(training_dataset.charset, t, oov_symbol="") for t in generated_student_output["sequences"]]
 				str_y = batch["raw_labels"]
-				stacked_scores = F.softmax(torch.stack(generated_student_output["scores"].permute(1, 2, 0), dim=1))
+				stacked_scores = F.softmax(torch.stack(generated_student_output["scores"]).permute(1, 2, 0), dim=1)
 				confidence_score = [torch.max(stacked_scores[i, :, :], dim=0).values.to("cpu") for i in range(stacked_scores.shape[0])]
 				values = {
 					"nb_samples": generated_student_output["sequences"].shape[0],
