@@ -1,4 +1,5 @@
 import os
+import tqdm
 from torch.optim import AdamW
 from basic.transforms import aug_config
 from OCR.ocr_dataset_manager import OCRDataset, OCRDatasetManager
@@ -61,16 +62,19 @@ def resize_with_padding(image, target_height, target_width):
 
 if __name__ == "__main__":
 	# get training dataset
+	print("Loading training dataset...")
 	training_dataset = get_training_dataset()
 	train_loader = training_dataset.train_loader
 	valid_loader = training_dataset.valid_loader["READ_2016-valid"]
 
 	# get metric manager
+	print("Initializing metric manager...")
 	dataset_name = list(training_dataset["datasets"].values())[0]
 	validation_metric_manager = MetricManager(metric_names=["cer", "wer", "map_cer", "loer"], dataset_name=dataset_name)
 	validation_metric_manager.post_processing_module = PostProcessingModuleREAD
 
 	# get student model
+	print("Initializing student model...")
 	model = VisionEncoderDecoderModel.from_encoder_decoder_pretrained(
 	"microsoft/swin-tiny-patch4-window7-224",
 	"distilbert/distilgpt2",
@@ -85,22 +89,26 @@ if __name__ == "__main__":
 	image_processor = AutoImageProcessor.from_pretrained("microsoft/swin-tiny-patch4-window7-224")
 
 	# get teacher model
+	print("Initializing teacher model...")
 	dan_manager = get_teacher_model()
 
 	# get optimizer
+	print("Initializing optimizer...")
 	optimizer = AdamW(model.parameters(), lr=1e-5)
 
 	# define loss function
+	print("Initializing loss function...")
 	kl_loss = KLDivLoss(reduction="batchmean")
 
 	# hyperparameters
+	print("Training model...")
 	num_epochs = 50000
 	distill_alpha = 0.5
 
 	best_cer = 1.0
 
 	# training loop
-	for epoch in range(num_epochs):
+	for epoch in tqdm(range(num_epochs)):
 		# set model to training mode
 		model.train()
 		training_dataset.train_dataset.training_info["epoch"] = epoch
