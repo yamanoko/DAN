@@ -211,6 +211,12 @@ if __name__ == "__main__":
 				str_y = batch["raw_labels"]
 				stacked_scores = F.softmax(torch.stack(generated_student_output["scores"]).permute(1, 2, 0), dim=1)
 				confidence_score = [torch.max(stacked_scores[i, :, :], dim=0).values.to("cpu") for i in range(stacked_scores.shape[0])]
+				for i in range(len(confidence_score)):
+					if len(list(confidence_score[i])) != len(str_x[i]):
+						print("ERROR")
+						print("confidence", len(list(confidence_score[i])))
+						print("str_x", len(str_x[i]))
+
 				values = {
 					"nb_samples": generated_student_output["sequences"].shape[0],
 					"str_x": str_x,
@@ -219,27 +225,27 @@ if __name__ == "__main__":
 				}
 				batch_metrics = validation_metric_manager.compute_metrics(values, ["cer", "wer", "map_cer", "loer"])
 				validation_metric_manager.update_metrics(batch_metrics)
-				display_values = validation_metric_manager.get_display_values()
+		display_values = validation_metric_manager.get_display_values()
 
-				# log metrics
-				metrics_log = f"Epoch {epoch}, CER: {display_values['cer'].item()}, WER: {display_values['wer'].item()}, MAP_CER: {display_values['map_cer'].item()}, LOER: {display_values['loer'].item()}"
-				loss_log = f"Student Loss: {student_loss.item()}, Distill Loss: {distill_loss.item()}"
-				print(metrics_log)
-				print(loss_log)
-				if os.path.exists("metrics.log"):
-					with open("metrics.log", "a") as f:
-						f.write(metrics_log + "\n")
-						f.write(loss_log + "\n")
-				else:
-					with open("metrics.log", "w") as f:
-						f.write(metrics_log + "\n")
-						f.write(loss_log + "\n")
-				
-				# save best model
-				if display_values["cer"] < best_cer:
-					best_cer = display_values["cer"]
-					model.save_pretrained("best_model")
-					print("Best model saved")
-				validation_metric_manager.init_metrics()
+		# log metrics
+		metrics_log = f"Epoch {epoch}, CER: {display_values['cer'].item()}, WER: {display_values['wer'].item()}, MAP_CER: {display_values['map_cer'].item()}, LOER: {display_values['loer'].item()}"
+		loss_log = f"Student Loss: {student_loss.item()}, Distill Loss: {distill_loss.item()}"
+		print(metrics_log)
+		print(loss_log)
+		if os.path.exists("metrics.log"):
+			with open("metrics.log", "a") as f:
+				f.write(metrics_log + "\n")
+				f.write(loss_log + "\n")
+		else:
+			with open("metrics.log", "w") as f:
+				f.write(metrics_log + "\n")
+				f.write(loss_log + "\n")
+		
+		# save best model
+		if display_values["cer"] < best_cer:
+			best_cer = display_values["cer"]
+			model.save_pretrained("best_model")
+			print("Best model saved")
+		validation_metric_manager.init_metrics()
 
 
