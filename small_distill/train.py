@@ -1,5 +1,5 @@
 import os
-import tqdm
+from tqdm import tqdm
 from torch.optim import AdamW
 from basic.transforms import aug_config
 from OCR.ocr_dataset_manager import OCRDataset, OCRDatasetManager
