@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
 	# get metric manager
 	print("Initializing metric manager...")
-	dataset_name = list(training_dataset["datasets"].values())[0]
+	dataset_name = list(training_dataset.params["datasets"].values())[0]
 	validation_metric_manager = MetricManager(metric_names=["cer", "wer", "map_cer", "loer"], dataset_name=dataset_name)
 	validation_metric_manager.post_processing_module = PostProcessingModuleREAD
 
