@@ -65,7 +65,7 @@ if __name__ == "__main__":
 	print("Loading training dataset...")
 	training_dataset = get_training_dataset()
 	train_loader = training_dataset.train_loader
-	valid_loader = training_dataset.valid_loader["READ_2016-valid"]
+	valid_loader = training_dataset.valid_loaders["READ_2016-valid"]
 
 	# get metric manager
 	print("Initializing metric manager...")
