@@ -87,6 +87,7 @@ if __name__ == "__main__":
 	eos_token_id=training_dataset.tokens['end'],
 	bos_token_id=training_dataset.tokens['start'],
 ).to("cuda")
+	model.config.decoder_start_token_id = model.config.eos_token_id
 	image_processor = AutoImageProcessor.from_pretrained("microsoft/swin-tiny-patch4-window7-224")
 
 	# get teacher model
