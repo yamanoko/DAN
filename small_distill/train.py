@@ -18,6 +18,7 @@ import numpy as np
 import random
 from transformers import VisionEncoderDecoderModel, AutoImageProcessor
 from PIL import Image
+from torchvision.transforms.functional import to_pil_image
 from training_dataset import get_training_dataset
 from teacher_dan import get_teacher_model
 
@@ -136,7 +137,7 @@ if __name__ == "__main__":
 																			  cache=cache, keep_all_weights=True)
 
 			# calculate student predictions
-			student_input = [resize_with_padding(image, 640, 480) for image in batch["imgs"]]
+			student_input = [resize_with_padding(to_pil_image(batch["imgs"][i]), 640, 480) for i in range(batch["imgs"].shape[0])]
 			student_input = image_processor(student_input, return_tensors="pt").to("cuda")
 			student_output = model(**student_input, labels=batch["labels"].to("cuda"))
 			student_loss = student_output.loss
